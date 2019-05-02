@@ -1,30 +1,23 @@
 package matroid_intersection
 
-import "gonum.org/v1/gonum/mat"
+import (
+	mapset "github.com/deckarep/golang-set"
+)
 
-type matroid interface {
-	rank() int
+type Matroid interface {
+	// rank oracle of the matroid
+	Rank() int
+	// validate if element e can be added to the GroundSet
+	Validate(e interface{}) bool
 }
 
-type LinearMatroid struct {
-	// E is ground set of this matroid
-	E mat.Matrix
+type PartitionMatroid struct {
+	E mapset.Set
 }
 
-func rank(m mat.Matrix) int {
-	svd := new(mat.SVD)
-
-	svd.Factorize(m, mat.SVDNone)
-	svs := svd.Values(nil)
-	var count int
-	for _, v := range svs {
-		if v != 0 {
-			count++
-		}
-	}
-	return count
+func Intersection(m1, m2 Matroid) {
+	mapset.NewSet()
 }
 
-func (lm *LinearMatroid) rank() int {
-	return rank(lm.E)
+func isEqualGroundSet(m1, m2 Matroid) {
 }
