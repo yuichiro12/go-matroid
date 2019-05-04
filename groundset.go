@@ -13,9 +13,12 @@ type GroundSet struct {
 
 type ElementType string
 
+// Element is an atomic element of ground set.
+// Be sure that Element is immutable.
 type Element interface {
 	GetType() ElementType
 	Key() string
+	Value() interface{}
 }
 
 func NewGroundSet(t ElementType, e ...Element) (*GroundSet, error) {
@@ -77,7 +80,7 @@ func (gs *GroundSet) Clone() *GroundSet {
 // TODO: implement deepClone
 
 // Contains() returns true if given Elements are all in GroundSet.
-// note that this doesn't check groundSetType; only check Key() of given Elements.
+// Note that this doesn't check groundSetType; only check Key() of given Elements.
 func (gs *GroundSet) Contains(e ...Element) bool {
 	for _, v := range e {
 		if _, ok := gs.set[v.Key()]; !ok {
@@ -88,7 +91,7 @@ func (gs *GroundSet) Contains(e ...Element) bool {
 }
 
 // Difference() subtracts `other` from `gs`.
-// if your Element has field of slice, map or pointer, the reference to the original GroundSet still remains.
+// If your Element has field of slice, map or pointer, the reference to the original GroundSet still remains.
 func (gs *GroundSet) Difference(other *GroundSet) (*GroundSet, error) {
 	if gs.groundSetType != other.groundSetType {
 		return nil, errorGSTypeMismatch(gs.groundSetType, other.groundSetType)
@@ -160,6 +163,8 @@ func (gs *GroundSet) Iter() <-chan Element {
 	return ch
 }
 
+// Remove() removes given element from GroundSet.
+// Note that doesn't check groundSetType; only check Key() of given Elements.
 func (gs *GroundSet) Remove(e Element) {
 	if _, ok := gs.set[e.Key()]; ok {
 		delete(gs.set, e.Key())
@@ -232,4 +237,12 @@ func (gs *GroundSet) CondSubset(f func(Element) bool) *GroundSet {
 
 func (gs *GroundSet) IsEmpty() bool {
 	return gs.Cardinality() == 0
+}
+
+func (gs *GroundSet) ToSlice() []Element {
+	var elms []Element
+	for e := range gs.Iter() {
+		elms = append(elms, e)
+	}
+	return elms
 }

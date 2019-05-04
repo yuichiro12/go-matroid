@@ -1,6 +1,8 @@
 package matroid_intersection
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestRank(t *testing.T) {
 	m := Matrix{

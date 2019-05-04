@@ -16,14 +16,14 @@ type LinearMatroid struct {
 
 // Vector implements Element
 type Vector struct {
-	Value  []float64
+	Val    []float64
 	Weight float64
 }
 
 func (v Vector) Key() string {
 	var s []string
-	for i := 0; i < len(v.Value); i++ {
-		s = append(s, fmt.Sprintf("%f", v.Value[i]))
+	for i := 0; i < len(v.Val); i++ {
+		s = append(s, fmt.Sprintf("%f", v.Val[i]))
 	}
 	return "(" + strings.Join(s, ",") + ")"
 }
@@ -32,13 +32,17 @@ func (v Vector) GetType() ElementType {
 	return VectorType
 }
 
+func (v Vector) Value() interface{} {
+	return v.Val
+}
+
 func NewUnweightedVector(v []float64) Vector {
 	return NewWeightedVector(0, v)
 }
 
 func NewWeightedVector(w float64, v []float64) Vector {
 	return Vector{
-		Value:  v,
+		Val:    v,
 		Weight: w,
 	}
 }
@@ -46,9 +50,9 @@ func NewWeightedVector(w float64, v []float64) Vector {
 // Matrix implements mat.Matrix
 type Matrix []Vector
 
-// At() returns the value of a matrix element at row i, column j
+// At() returns the Val of a matrix element at row i, column j
 func (m Matrix) At(i, j int) float64 {
-	return m[i].Value[j]
+	return m[i].Val[j]
 }
 
 //
@@ -56,7 +60,7 @@ func (m Matrix) Dims() (r, c int) {
 	if len(m) == 0 {
 		return 0, 0
 	} else {
-		return len(m), len(m[0].Value)
+		return len(m), len(m[0].Val)
 	}
 }
 
