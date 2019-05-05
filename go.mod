@@ -1,4 +1,4 @@
-module github.com/yuichiro12/matroid-intersection
+module github.com/yuichiro12/go-matroid
 
 go 1.12
 

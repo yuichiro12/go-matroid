@@ -1,4 +1,4 @@
-package matroid_intersection
+package matroid
 
 import (
 	"testing"
@@ -13,8 +13,9 @@ func TestRank(t *testing.T) {
 		NewUnweightedVector([]float64{0, 0, 0, 0}),
 	}
 	lm := NewLinearMatroid(m)
-	if lm.Rank() != 4 {
-		t.Errorf("rank mismatch. expected: 4, actual: %d", lm.Rank())
+
+	if lm.Rank(lm.GroundSet()) != 4 {
+		t.Errorf("rank mismatch. expected: 4, actual: %d", lm.Rank(lm.GroundSet()))
 	}
 	m = Matrix{
 		NewUnweightedVector([]float64{1, 1, 1, 1, 1}),
@@ -26,7 +27,7 @@ func TestRank(t *testing.T) {
 		NewUnweightedVector([]float64{0, 0, 0, 0, 0}),
 	}
 	lm = NewLinearMatroid(m)
-	if lm.Rank() != 2 {
-		t.Errorf("rank mismatch. expected: 2, actual: %d", lm.Rank())
+	if lm.Rank(lm.GroundSet()) != 2 {
+		t.Errorf("rank mismatch. expected: 2, actual: %d", lm.Rank(lm.GroundSet()))
 	}
 }

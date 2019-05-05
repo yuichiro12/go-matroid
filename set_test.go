@@ -1,4 +1,4 @@
-package matroid_intersection
+package matroid
 
 import (
 	"reflect"
@@ -10,8 +10,8 @@ import (
 const type1 ElementType = "TYPE1"
 
 type testElement1 struct {
-	Val    int
-	Weight float64
+	V int
+	W float64
 }
 
 func (e testElement1) GetType() ElementType {
@@ -19,18 +19,22 @@ func (e testElement1) GetType() ElementType {
 }
 
 func (e testElement1) Key() string {
-	return strconv.Itoa(e.Val)
+	return strconv.Itoa(e.V)
 }
 
 func (e testElement1) Value() interface{} {
-	return e.Val
+	return e.V
+}
+
+func (e testElement1) Weight() float64 {
+	return e.W
 }
 
 const type2 ElementType = "TYPE2"
 
 type testElement2 struct {
-	Val    int
-	Weight float64
+	V int
+	W float64
 }
 
 func (e testElement2) GetType() ElementType {
@@ -38,14 +42,18 @@ func (e testElement2) GetType() ElementType {
 }
 
 func (e testElement2) Key() string {
-	return strconv.Itoa(e.Val)
+	return strconv.Itoa(e.V)
 }
 
 func (e testElement2) Value() interface{} {
-	return e.Val
+	return e.V
 }
 
-func TestNewGroundSet(t *testing.T) {
+func (e testElement2) Weight() float64 {
+	return e.W
+}
+
+func TestNewSet(t *testing.T) {
 	type args struct {
 		t ElementType
 		e []Element
@@ -53,22 +61,22 @@ func TestNewGroundSet(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    *GroundSet
+		want    *Set
 		wantErr bool
 	}{
 		{
 			name: "test1",
 			args: args{
 				t: type1,
-				e: []Element{testElement1{Val: 1}, testElement1{Val: 2}, testElement1{Val: 3}},
+				e: []Element{testElement1{V: 1}, testElement1{V: 2}, testElement1{V: 3}},
 			},
-			want: &GroundSet{
+			want: &Set{
 				set: map[string]Element{
-					"1": testElement1{Val: 1},
-					"2": testElement1{Val: 2},
-					"3": testElement1{Val: 3},
+					"1": testElement1{V: 1},
+					"2": testElement1{V: 2},
+					"3": testElement1{V: 3},
 				},
-				groundSetType: type1,
+				setType: type1,
 			},
 			wantErr: false,
 		},
@@ -76,7 +84,7 @@ func TestNewGroundSet(t *testing.T) {
 			name: "test2",
 			args: args{
 				t: type1,
-				e: []Element{testElement1{Val: 1}, testElement1{Val: 2}, testElement2{Val: 3}},
+				e: []Element{testElement1{V: 1}, testElement1{V: 2}, testElement2{V: 3}},
 			},
 			want:    nil,
 			wantErr: true,
@@ -84,19 +92,19 @@ func TestNewGroundSet(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewGroundSet(tt.args.t, tt.args.e...)
+			got, err := NewSet(tt.args.t, tt.args.e...)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("NewGroundSet() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("NewSet() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewGroundSet() = %v, want %v", got, tt.want)
+				t.Errorf("NewSet() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestGroundSet_Add(t *testing.T) {
+func TestSet_Add(t *testing.T) {
 	type fields struct {
 		set           map[string]Element
 		groundSetType ElementType
@@ -114,57 +122,57 @@ func TestGroundSet_Add(t *testing.T) {
 			name: "test1",
 			fields: fields{
 				set: map[string]Element{
-					"1": testElement1{Val: 1},
-					"2": testElement1{Val: 2},
-					"3": testElement1{Val: 3},
+					"1": testElement1{V: 1},
+					"2": testElement1{V: 2},
+					"3": testElement1{V: 3},
 				},
 				groundSetType: type1,
 			},
-			args:    args{e: testElement1{Val: 4}},
+			args:    args{e: testElement1{V: 4}},
 			wantErr: false,
 		},
 		{
 			name: "test2",
 			fields: fields{
 				set: map[string]Element{
-					"1": testElement1{Val: 1},
-					"2": testElement1{Val: 2},
-					"3": testElement1{Val: 3},
+					"1": testElement1{V: 1},
+					"2": testElement1{V: 2},
+					"3": testElement1{V: 3},
 				},
 				groundSetType: type1,
 			},
-			args:    args{e: testElement2{Val: 4}},
+			args:    args{e: testElement2{V: 4}},
 			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gs := &GroundSet{
-				set:           tt.fields.set,
-				groundSetType: tt.fields.groundSetType,
+			gs := &Set{
+				set:     tt.fields.set,
+				setType: tt.fields.groundSetType,
 			}
 			if err := gs.Add(tt.args.e); (err != nil) != tt.wantErr {
-				t.Errorf("GroundSet.Add() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Set.Add() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
 	t.Run("test3", func(t *testing.T) {
-		gs, _ := NewGroundSet(type1, testElement1{Val: 1}, testElement1{Val: 2})
+		gs, _ := NewSet(type1, testElement1{V: 1}, testElement1{V: 2})
 		if gs.Cardinality() != 2 {
 			t.Errorf("cardinarity mismatch. expected:2, actural: %d", gs.Cardinality())
 		}
-		_ = gs.Add(testElement1{Val: 1})
+		_ = gs.Add(testElement1{V: 1})
 		if gs.Cardinality() != 2 {
 			t.Errorf("cardinarity mismatch. expected:2, actural: %d", gs.Cardinality())
 		}
-		_ = gs.Add(testElement1{Val: 3})
+		_ = gs.Add(testElement1{V: 3})
 		if gs.Cardinality() != 3 {
 			t.Errorf("cardinarity mismatch. expected:3, actural: %d", gs.Cardinality())
 		}
 	})
 }
 
-func TestGroundSet_Clone(t *testing.T) {
+func TestSet_Clone(t *testing.T) {
 	type fields struct {
 		set           map[string]Element
 		groundSetType ElementType
@@ -176,7 +184,7 @@ func TestGroundSet_Clone(t *testing.T) {
 	tests := []struct {
 		name   string
 		fields fields
-		want   *GroundSet
+		want   *Set
 	}{
 		{
 			name: "test1",
@@ -188,30 +196,30 @@ func TestGroundSet_Clone(t *testing.T) {
 				},
 				groundSetType: VectorType,
 			},
-			want: &GroundSet{
+			want: &Set{
 				set: map[string]Element{
 					v1.Key(): v1,
 					v2.Key(): v2,
 					v3.Key(): v3,
 				},
-				groundSetType: VectorType,
+				setType: VectorType,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gs := &GroundSet{
-				set:           tt.fields.set,
-				groundSetType: tt.fields.groundSetType,
+			gs := &Set{
+				set:     tt.fields.set,
+				setType: tt.fields.groundSetType,
 			}
 			if got := gs.Clone(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GroundSet.Clone() = %v, want %v", got, tt.want)
+				t.Errorf("Set.Clone() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestGroundSet_Contains(t *testing.T) {
+func TestSet_Contains(t *testing.T) {
 	type fields struct {
 		set           map[string]Element
 		groundSetType ElementType
@@ -229,17 +237,17 @@ func TestGroundSet_Contains(t *testing.T) {
 			name: "test1",
 			fields: fields{
 				set: map[string]Element{
-					"1": testElement1{Val: 1},
-					"2": testElement1{Val: 2},
-					"3": testElement1{Val: 3},
+					"1": testElement1{V: 1},
+					"2": testElement1{V: 2},
+					"3": testElement1{V: 3},
 				},
 				groundSetType: type1,
 			},
 			args: args{
 				[]Element{
-					testElement1{Val: 1},
-					testElement1{Val: 2},
-					testElement1{Val: 3},
+					testElement1{V: 1},
+					testElement1{V: 2},
+					testElement1{V: 3},
 				},
 			},
 			want: true,
@@ -248,72 +256,72 @@ func TestGroundSet_Contains(t *testing.T) {
 			name: "test2",
 			fields: fields{
 				set: map[string]Element{
-					"1": testElement1{Val: 1},
-					"2": testElement1{Val: 2},
-					"3": testElement1{Val: 3},
+					"1": testElement1{V: 1},
+					"2": testElement1{V: 2},
+					"3": testElement1{V: 3},
 				},
 				groundSetType: type1,
 			},
 			args: args{
-				[]Element{testElement1{Val: 4}},
+				[]Element{testElement1{V: 4}},
 			},
 			want: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gs := &GroundSet{
-				set:           tt.fields.set,
-				groundSetType: tt.fields.groundSetType,
+			gs := &Set{
+				set:     tt.fields.set,
+				setType: tt.fields.groundSetType,
 			}
 			if got := gs.Contains(tt.args.e...); got != tt.want {
-				t.Errorf("GroundSet.Contains() = %v, want %v", got, tt.want)
+				t.Errorf("Set.Contains() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestGroundSet_Difference(t *testing.T) {
+func TestSet_Difference(t *testing.T) {
 	type fields struct {
 		set           map[string]Element
 		groundSetType ElementType
 	}
 	type args struct {
-		other *GroundSet
+		other *Set
 	}
 	tests := []struct {
 		name    string
 		fields  fields
 		args    args
-		want    *GroundSet
+		want    *Set
 		wantErr bool
 	}{
 		{
 			name: "test1",
 			fields: fields{
 				set: map[string]Element{
-					"1": testElement1{Val: 1},
-					"2": testElement1{Val: 2},
-					"3": testElement1{Val: 3},
-					"4": testElement1{Val: 4},
+					"1": testElement1{V: 1},
+					"2": testElement1{V: 2},
+					"3": testElement1{V: 3},
+					"4": testElement1{V: 4},
 				},
 				groundSetType: type1,
 			},
 			args: args{
-				other: &GroundSet{
+				other: &Set{
 					set: map[string]Element{
-						"1": testElement1{Val: 1},
-						"2": testElement1{Val: 2},
+						"1": testElement1{V: 1},
+						"2": testElement1{V: 2},
 					},
-					groundSetType: type1,
+					setType: type1,
 				},
 			},
-			want: &GroundSet{
+			want: &Set{
 				set: map[string]Element{
-					"3": testElement1{Val: 3},
-					"4": testElement1{Val: 4},
+					"3": testElement1{V: 3},
+					"4": testElement1{V: 4},
 				},
-				groundSetType: type1,
+				setType: type1,
 			},
 			wantErr: false,
 		},
@@ -321,25 +329,25 @@ func TestGroundSet_Difference(t *testing.T) {
 			name: "test2",
 			fields: fields{
 				set: map[string]Element{
-					"1": testElement1{Val: 1},
-					"2": testElement1{Val: 2},
+					"1": testElement1{V: 1},
+					"2": testElement1{V: 2},
 				},
 				groundSetType: type1,
 			},
 			args: args{
-				other: &GroundSet{
+				other: &Set{
 					set: map[string]Element{
-						"1": testElement1{Val: 1},
-						"2": testElement1{Val: 2},
-						"3": testElement1{Val: 3},
-						"4": testElement1{Val: 4},
+						"1": testElement1{V: 1},
+						"2": testElement1{V: 2},
+						"3": testElement1{V: 3},
+						"4": testElement1{V: 4},
 					},
-					groundSetType: type1,
+					setType: type1,
 				},
 			},
-			want: &GroundSet{
-				set:           map[string]Element{},
-				groundSetType: type1,
+			want: &Set{
+				set:     map[string]Element{},
+				setType: type1,
 			},
 			wantErr: false,
 		},
@@ -347,20 +355,20 @@ func TestGroundSet_Difference(t *testing.T) {
 			name: "test3",
 			fields: fields{
 				set: map[string]Element{
-					"1": testElement1{Val: 1},
-					"2": testElement1{Val: 2},
+					"1": testElement1{V: 1},
+					"2": testElement1{V: 2},
 				},
 				groundSetType: type1,
 			},
 			args: args{
-				other: &GroundSet{
+				other: &Set{
 					set: map[string]Element{
-						"1": testElement1{Val: 1},
-						"2": testElement1{Val: 2},
-						"3": testElement1{Val: 3},
-						"4": testElement1{Val: 4},
+						"1": testElement1{V: 1},
+						"2": testElement1{V: 2},
+						"3": testElement1{V: 3},
+						"4": testElement1{V: 4},
 					},
-					groundSetType: type2,
+					setType: type2,
 				},
 			},
 			want:    nil,
@@ -369,29 +377,29 @@ func TestGroundSet_Difference(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gs := &GroundSet{
-				set:           tt.fields.set,
-				groundSetType: tt.fields.groundSetType,
+			gs := &Set{
+				set:     tt.fields.set,
+				setType: tt.fields.groundSetType,
 			}
 			got, err := gs.Difference(tt.args.other)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("GroundSet.Difference() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Set.Difference() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GroundSet.Difference() = %v, want %v", got, tt.want)
+				t.Errorf("Set.Difference() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestGroundSet_Equal(t *testing.T) {
+func TestSet_Equal(t *testing.T) {
 	type fields struct {
 		set           map[string]Element
 		groundSetType ElementType
 	}
 	type args struct {
-		other *GroundSet
+		other *Set
 	}
 	tests := []struct {
 		name   string
@@ -403,20 +411,20 @@ func TestGroundSet_Equal(t *testing.T) {
 			name: "test1",
 			fields: fields{
 				set: map[string]Element{
-					"1": testElement1{Val: 1},
-					"2": testElement1{Val: 2},
-					"3": testElement1{Val: 3},
+					"1": testElement1{V: 1},
+					"2": testElement1{V: 2},
+					"3": testElement1{V: 3},
 				},
 				groundSetType: type1,
 			},
 			args: args{
-				other: &GroundSet{
+				other: &Set{
 					set: map[string]Element{
-						"1": testElement1{Val: 1},
-						"2": testElement1{Val: 2},
-						"3": testElement1{Val: 3},
+						"1": testElement1{V: 1},
+						"2": testElement1{V: 2},
+						"3": testElement1{V: 3},
 					},
-					groundSetType: type1,
+					setType: type1,
 				},
 			},
 			want: true,
@@ -425,19 +433,19 @@ func TestGroundSet_Equal(t *testing.T) {
 			name: "test2",
 			fields: fields{
 				set: map[string]Element{
-					"1": testElement1{Val: 1},
-					"2": testElement1{Val: 2},
-					"3": testElement1{Val: 3},
+					"1": testElement1{V: 1},
+					"2": testElement1{V: 2},
+					"3": testElement1{V: 3},
 				},
 				groundSetType: type1,
 			},
 			args: args{
-				other: &GroundSet{
+				other: &Set{
 					set: map[string]Element{
-						"1": testElement1{Val: 1},
-						"2": testElement1{Val: 2},
+						"1": testElement1{V: 1},
+						"2": testElement1{V: 2},
 					},
-					groundSetType: type1,
+					setType: type1,
 				},
 			},
 			want: false,
@@ -446,19 +454,19 @@ func TestGroundSet_Equal(t *testing.T) {
 			name: "test3",
 			fields: fields{
 				set: map[string]Element{
-					"1": testElement1{Val: 1},
-					"2": testElement1{Val: 2},
+					"1": testElement1{V: 1},
+					"2": testElement1{V: 2},
 				},
 				groundSetType: type1,
 			},
 			args: args{
-				other: &GroundSet{
+				other: &Set{
 					set: map[string]Element{
-						"1": testElement1{Val: 1},
-						"2": testElement1{Val: 2},
-						"3": testElement1{Val: 3},
+						"1": testElement1{V: 1},
+						"2": testElement1{V: 2},
+						"3": testElement1{V: 3},
 					},
-					groundSetType: type1,
+					setType: type1,
 				},
 			},
 			want: false,
@@ -467,82 +475,82 @@ func TestGroundSet_Equal(t *testing.T) {
 			name: "test4",
 			fields: fields{
 				set: map[string]Element{
-					"1": testElement1{Val: 1},
-					"2": testElement1{Val: 2},
-					"3": testElement1{Val: 3},
+					"1": testElement1{V: 1},
+					"2": testElement1{V: 2},
+					"3": testElement1{V: 3},
 				},
 				groundSetType: type1,
 			},
 			args: args{
-				other: &GroundSet{
+				other: &Set{
 					set: map[string]Element{
-						"1": testElement2{Val: 1},
-						"2": testElement2{Val: 2},
-						"3": testElement2{Val: 3},
+						"1": testElement2{V: 1},
+						"2": testElement2{V: 2},
+						"3": testElement2{V: 3},
 					},
-					groundSetType: type2,
+					setType: type2,
 				},
 			},
-			// doesn't matter if groundSetType are not equal
+			// doesn't matter if setType are not equal
 			want: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gs := &GroundSet{
-				set:           tt.fields.set,
-				groundSetType: tt.fields.groundSetType,
+			gs := &Set{
+				set:     tt.fields.set,
+				setType: tt.fields.groundSetType,
 			}
 			if got := gs.Equal(tt.args.other); got != tt.want {
-				t.Errorf("GroundSet.Equal() = %v, want %v", got, tt.want)
+				t.Errorf("Set.Equal() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestGroundSet_Intersect(t *testing.T) {
+func TestSet_Intersect(t *testing.T) {
 	type fields struct {
 		set           map[string]Element
 		groundSetType ElementType
 	}
 	type args struct {
-		other *GroundSet
+		other *Set
 	}
 	tests := []struct {
 		name    string
 		fields  fields
 		args    args
-		want    *GroundSet
+		want    *Set
 		wantErr bool
 	}{
 		{
 			name: "test1",
 			fields: fields{
 				set: map[string]Element{
-					"1": testElement1{Val: 1},
-					"2": testElement1{Val: 2},
-					"3": testElement1{Val: 3},
-					"4": testElement1{Val: 4},
+					"1": testElement1{V: 1},
+					"2": testElement1{V: 2},
+					"3": testElement1{V: 3},
+					"4": testElement1{V: 4},
 				},
 				groundSetType: type1,
 			},
 			args: args{
-				other: &GroundSet{
+				other: &Set{
 					set: map[string]Element{
-						"3": testElement1{Val: 3},
-						"4": testElement1{Val: 4},
-						"5": testElement1{Val: 5},
-						"6": testElement1{Val: 6},
+						"3": testElement1{V: 3},
+						"4": testElement1{V: 4},
+						"5": testElement1{V: 5},
+						"6": testElement1{V: 6},
 					},
-					groundSetType: type1,
+					setType: type1,
 				},
 			},
-			want: &GroundSet{
+			want: &Set{
 				set: map[string]Element{
-					"3": testElement1{Val: 3},
-					"4": testElement1{Val: 4},
+					"3": testElement1{V: 3},
+					"4": testElement1{V: 4},
 				},
-				groundSetType: type1,
+				setType: type1,
 			},
 			wantErr: false,
 		},
@@ -550,22 +558,22 @@ func TestGroundSet_Intersect(t *testing.T) {
 			name: "test1",
 			fields: fields{
 				set: map[string]Element{
-					"1": testElement1{Val: 1},
-					"2": testElement1{Val: 2},
-					"3": testElement1{Val: 3},
-					"4": testElement1{Val: 4},
+					"1": testElement1{V: 1},
+					"2": testElement1{V: 2},
+					"3": testElement1{V: 3},
+					"4": testElement1{V: 4},
 				},
 				groundSetType: type1,
 			},
 			args: args{
-				other: &GroundSet{
+				other: &Set{
 					set: map[string]Element{
-						"3": testElement1{Val: 3},
-						"4": testElement1{Val: 4},
-						"5": testElement1{Val: 5},
-						"6": testElement1{Val: 6},
+						"3": testElement1{V: 3},
+						"4": testElement1{V: 4},
+						"5": testElement1{V: 5},
+						"6": testElement1{V: 6},
 					},
-					groundSetType: type2,
+					setType: type2,
 				},
 			},
 			want:    nil,
@@ -574,29 +582,29 @@ func TestGroundSet_Intersect(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gs := &GroundSet{
-				set:           tt.fields.set,
-				groundSetType: tt.fields.groundSetType,
+			gs := &Set{
+				set:     tt.fields.set,
+				setType: tt.fields.groundSetType,
 			}
 			got, err := gs.Intersect(tt.args.other)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("GroundSet.Intersect() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Set.Intersect() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GroundSet.Intersect() = %v, want %v", got, tt.want)
+				t.Errorf("Set.Intersect() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestGroundSet_IsProperSubset(t *testing.T) {
+func TestSet_IsProperSubsetOf(t *testing.T) {
 	type fields struct {
 		set           map[string]Element
 		groundSetType ElementType
 	}
 	type args struct {
-		other *GroundSet
+		other *Set
 	}
 	tests := []struct {
 		name   string
@@ -608,18 +616,18 @@ func TestGroundSet_IsProperSubset(t *testing.T) {
 			name: "test1",
 			fields: fields{
 				set: map[string]Element{
-					"1": testElement1{Val: 1},
-					"2": testElement1{Val: 2},
+					"1": testElement1{V: 1},
+					"2": testElement1{V: 2},
 				},
 				groundSetType: type1,
 			},
 			args: args{
-				other: &GroundSet{
+				other: &Set{
 					set: map[string]Element{
-						"2": testElement1{Val: 2},
-						"3": testElement1{Val: 3},
+						"2": testElement1{V: 2},
+						"3": testElement1{V: 3},
 					},
-					groundSetType: type1,
+					setType: type1,
 				},
 			},
 			want: false,
@@ -628,19 +636,19 @@ func TestGroundSet_IsProperSubset(t *testing.T) {
 			name: "test2",
 			fields: fields{
 				set: map[string]Element{
-					"1": testElement1{Val: 1},
-					"2": testElement1{Val: 2},
+					"1": testElement1{V: 1},
+					"2": testElement1{V: 2},
 				},
 				groundSetType: type1,
 			},
 			args: args{
-				other: &GroundSet{
+				other: &Set{
 					set: map[string]Element{
-						"1": testElement1{Val: 1},
-						"2": testElement1{Val: 2},
-						"3": testElement1{Val: 3},
+						"1": testElement1{V: 1},
+						"2": testElement1{V: 2},
+						"3": testElement1{V: 3},
 					},
-					groundSetType: type1,
+					setType: type1,
 				},
 			},
 			want: true,
@@ -649,20 +657,20 @@ func TestGroundSet_IsProperSubset(t *testing.T) {
 			name: "test3",
 			fields: fields{
 				set: map[string]Element{
-					"1": testElement1{Val: 1},
-					"2": testElement1{Val: 2},
-					"3": testElement1{Val: 3},
+					"1": testElement1{V: 1},
+					"2": testElement1{V: 2},
+					"3": testElement1{V: 3},
 				},
 				groundSetType: type1,
 			},
 			args: args{
-				other: &GroundSet{
+				other: &Set{
 					set: map[string]Element{
-						"1": testElement1{Val: 1},
-						"2": testElement1{Val: 2},
-						"3": testElement1{Val: 3},
+						"1": testElement1{V: 1},
+						"2": testElement1{V: 2},
+						"3": testElement1{V: 3},
 					},
-					groundSetType: type1,
+					setType: type1,
 				},
 			},
 			want: false,
@@ -670,24 +678,24 @@ func TestGroundSet_IsProperSubset(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gs := &GroundSet{
-				set:           tt.fields.set,
-				groundSetType: tt.fields.groundSetType,
+			gs := &Set{
+				set:     tt.fields.set,
+				setType: tt.fields.groundSetType,
 			}
-			if got := gs.IsProperSubset(tt.args.other); got != tt.want {
-				t.Errorf("GroundSet.IsProperSubset() = %v, want %v", got, tt.want)
+			if got := gs.IsProperSubsetOf(tt.args.other); got != tt.want {
+				t.Errorf("Set.IsProperSubsetOf() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestGroundSet_IsProperSuperset(t *testing.T) {
+func TestSet_IsProperSupersetOf(t *testing.T) {
 	type fields struct {
 		set           map[string]Element
 		groundSetType ElementType
 	}
 	type args struct {
-		other *GroundSet
+		other *Set
 	}
 	tests := []struct {
 		name   string
@@ -699,18 +707,18 @@ func TestGroundSet_IsProperSuperset(t *testing.T) {
 			name: "test1",
 			fields: fields{
 				set: map[string]Element{
-					"1": testElement1{Val: 1},
-					"2": testElement1{Val: 2},
+					"1": testElement1{V: 1},
+					"2": testElement1{V: 2},
 				},
 				groundSetType: type1,
 			},
 			args: args{
-				other: &GroundSet{
+				other: &Set{
 					set: map[string]Element{
-						"2": testElement1{Val: 2},
-						"3": testElement1{Val: 3},
+						"2": testElement1{V: 2},
+						"3": testElement1{V: 3},
 					},
-					groundSetType: type1,
+					setType: type1,
 				},
 			},
 			want: false,
@@ -719,19 +727,19 @@ func TestGroundSet_IsProperSuperset(t *testing.T) {
 			name: "test2",
 			fields: fields{
 				set: map[string]Element{
-					"1": testElement1{Val: 1},
-					"2": testElement1{Val: 2},
-					"3": testElement1{Val: 3},
+					"1": testElement1{V: 1},
+					"2": testElement1{V: 2},
+					"3": testElement1{V: 3},
 				},
 				groundSetType: type1,
 			},
 			args: args{
-				other: &GroundSet{
+				other: &Set{
 					set: map[string]Element{
-						"1": testElement1{Val: 1},
-						"2": testElement1{Val: 2},
+						"1": testElement1{V: 1},
+						"2": testElement1{V: 2},
 					},
-					groundSetType: type1,
+					setType: type1,
 				},
 			},
 			want: true,
@@ -740,20 +748,20 @@ func TestGroundSet_IsProperSuperset(t *testing.T) {
 			name: "test3",
 			fields: fields{
 				set: map[string]Element{
-					"1": testElement1{Val: 1},
-					"2": testElement1{Val: 2},
-					"3": testElement1{Val: 3},
+					"1": testElement1{V: 1},
+					"2": testElement1{V: 2},
+					"3": testElement1{V: 3},
 				},
 				groundSetType: type1,
 			},
 			args: args{
-				other: &GroundSet{
+				other: &Set{
 					set: map[string]Element{
-						"1": testElement1{Val: 1},
-						"2": testElement1{Val: 2},
-						"3": testElement1{Val: 3},
+						"1": testElement1{V: 1},
+						"2": testElement1{V: 2},
+						"3": testElement1{V: 3},
 					},
-					groundSetType: type1,
+					setType: type1,
 				},
 			},
 			want: false,
@@ -761,24 +769,24 @@ func TestGroundSet_IsProperSuperset(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gs := &GroundSet{
-				set:           tt.fields.set,
-				groundSetType: tt.fields.groundSetType,
+			gs := &Set{
+				set:     tt.fields.set,
+				setType: tt.fields.groundSetType,
 			}
-			if got := gs.IsProperSuperset(tt.args.other); got != tt.want {
-				t.Errorf("GroundSet.IsProperSuperset() = %v, want %v", got, tt.want)
+			if got := gs.IsProperSupersetOf(tt.args.other); got != tt.want {
+				t.Errorf("Set.IsProperSupersetOf() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestGroundSet_IsSubset(t *testing.T) {
+func TestSet_IsSubsetOf(t *testing.T) {
 	type fields struct {
 		set           map[string]Element
 		groundSetType ElementType
 	}
 	type args struct {
-		other *GroundSet
+		other *Set
 	}
 	tests := []struct {
 		name   string
@@ -790,18 +798,18 @@ func TestGroundSet_IsSubset(t *testing.T) {
 			name: "test1",
 			fields: fields{
 				set: map[string]Element{
-					"1": testElement1{Val: 1},
-					"2": testElement1{Val: 2},
+					"1": testElement1{V: 1},
+					"2": testElement1{V: 2},
 				},
 				groundSetType: type1,
 			},
 			args: args{
-				other: &GroundSet{
+				other: &Set{
 					set: map[string]Element{
-						"2": testElement1{Val: 2},
-						"3": testElement1{Val: 3},
+						"2": testElement1{V: 2},
+						"3": testElement1{V: 3},
 					},
-					groundSetType: type1,
+					setType: type1,
 				},
 			},
 			want: false,
@@ -810,19 +818,19 @@ func TestGroundSet_IsSubset(t *testing.T) {
 			name: "test2",
 			fields: fields{
 				set: map[string]Element{
-					"1": testElement1{Val: 1},
-					"2": testElement1{Val: 2},
+					"1": testElement1{V: 1},
+					"2": testElement1{V: 2},
 				},
 				groundSetType: type1,
 			},
 			args: args{
-				other: &GroundSet{
+				other: &Set{
 					set: map[string]Element{
-						"1": testElement1{Val: 1},
-						"2": testElement1{Val: 2},
-						"3": testElement1{Val: 3},
+						"1": testElement1{V: 1},
+						"2": testElement1{V: 2},
+						"3": testElement1{V: 3},
 					},
-					groundSetType: type1,
+					setType: type1,
 				},
 			},
 			want: true,
@@ -831,20 +839,20 @@ func TestGroundSet_IsSubset(t *testing.T) {
 			name: "test3",
 			fields: fields{
 				set: map[string]Element{
-					"1": testElement1{Val: 1},
-					"2": testElement1{Val: 2},
-					"3": testElement1{Val: 3},
+					"1": testElement1{V: 1},
+					"2": testElement1{V: 2},
+					"3": testElement1{V: 3},
 				},
 				groundSetType: type1,
 			},
 			args: args{
-				other: &GroundSet{
+				other: &Set{
 					set: map[string]Element{
-						"1": testElement1{Val: 1},
-						"2": testElement1{Val: 2},
-						"3": testElement1{Val: 3},
+						"1": testElement1{V: 1},
+						"2": testElement1{V: 2},
+						"3": testElement1{V: 3},
 					},
-					groundSetType: type1,
+					setType: type1,
 				},
 			},
 			want: true,
@@ -852,24 +860,24 @@ func TestGroundSet_IsSubset(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gs := &GroundSet{
-				set:           tt.fields.set,
-				groundSetType: tt.fields.groundSetType,
+			gs := &Set{
+				set:     tt.fields.set,
+				setType: tt.fields.groundSetType,
 			}
-			if got := gs.IsSubset(tt.args.other); got != tt.want {
-				t.Errorf("GroundSet.IsSubset() = %v, want %v", got, tt.want)
+			if got := gs.IsSubsetOf(tt.args.other); got != tt.want {
+				t.Errorf("Set.IsSubsetOf() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestGroundSet_IsSuperset(t *testing.T) {
+func TestSet_IsSupersetOf(t *testing.T) {
 	type fields struct {
 		set           map[string]Element
 		groundSetType ElementType
 	}
 	type args struct {
-		other *GroundSet
+		other *Set
 	}
 	tests := []struct {
 		name   string
@@ -881,18 +889,18 @@ func TestGroundSet_IsSuperset(t *testing.T) {
 			name: "test1",
 			fields: fields{
 				set: map[string]Element{
-					"1": testElement1{Val: 1},
-					"2": testElement1{Val: 2},
+					"1": testElement1{V: 1},
+					"2": testElement1{V: 2},
 				},
 				groundSetType: type1,
 			},
 			args: args{
-				other: &GroundSet{
+				other: &Set{
 					set: map[string]Element{
-						"2": testElement1{Val: 2},
-						"3": testElement1{Val: 3},
+						"2": testElement1{V: 2},
+						"3": testElement1{V: 3},
 					},
-					groundSetType: type1,
+					setType: type1,
 				},
 			},
 			want: false,
@@ -901,19 +909,19 @@ func TestGroundSet_IsSuperset(t *testing.T) {
 			name: "test2",
 			fields: fields{
 				set: map[string]Element{
-					"1": testElement1{Val: 1},
-					"2": testElement1{Val: 2},
-					"3": testElement1{Val: 3},
+					"1": testElement1{V: 1},
+					"2": testElement1{V: 2},
+					"3": testElement1{V: 3},
 				},
 				groundSetType: type1,
 			},
 			args: args{
-				other: &GroundSet{
+				other: &Set{
 					set: map[string]Element{
-						"1": testElement1{Val: 1},
-						"2": testElement1{Val: 2},
+						"1": testElement1{V: 1},
+						"2": testElement1{V: 2},
 					},
-					groundSetType: type1,
+					setType: type1,
 				},
 			},
 			want: true,
@@ -922,20 +930,20 @@ func TestGroundSet_IsSuperset(t *testing.T) {
 			name: "test3",
 			fields: fields{
 				set: map[string]Element{
-					"1": testElement1{Val: 1},
-					"2": testElement1{Val: 2},
-					"3": testElement1{Val: 3},
+					"1": testElement1{V: 1},
+					"2": testElement1{V: 2},
+					"3": testElement1{V: 3},
 				},
 				groundSetType: type1,
 			},
 			args: args{
-				other: &GroundSet{
+				other: &Set{
 					set: map[string]Element{
-						"1": testElement1{Val: 1},
-						"2": testElement1{Val: 2},
-						"3": testElement1{Val: 3},
+						"1": testElement1{V: 1},
+						"2": testElement1{V: 2},
+						"3": testElement1{V: 3},
 					},
-					groundSetType: type1,
+					setType: type1,
 				},
 			},
 			want: true,
@@ -943,18 +951,18 @@ func TestGroundSet_IsSuperset(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gs := &GroundSet{
-				set:           tt.fields.set,
-				groundSetType: tt.fields.groundSetType,
+			gs := &Set{
+				set:     tt.fields.set,
+				setType: tt.fields.groundSetType,
 			}
-			if got := gs.IsSuperset(tt.args.other); got != tt.want {
-				t.Errorf("GroundSet.IsSuperset() = %v, want %v", got, tt.want)
+			if got := gs.IsSupersetOf(tt.args.other); got != tt.want {
+				t.Errorf("Set.IsSupersetOf() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestGroundSet_Each(t *testing.T) {
+func TestSet_Each(t *testing.T) {
 	type fields struct {
 		set           map[string]Element
 		groundSetType ElementType
@@ -967,51 +975,51 @@ func TestGroundSet_Each(t *testing.T) {
 		name   string
 		fields fields
 		args   args
-		want   *GroundSet
+		want   *Set
 	}{
 		{
 			name: "test1",
 			fields: fields{
 				set: map[string]Element{
-					"1": testElement1{Val: 1},
-					"2": testElement1{Val: 2},
-					"3": testElement1{Val: 3},
+					"1": testElement1{V: 1},
+					"2": testElement1{V: 2},
+					"3": testElement1{V: 3},
 				},
 				groundSetType: type1,
 			},
 			args: args{
 				func(e Element) bool {
-					e0 := testElement2{Val: e.Value().(int)}
-					if e0.Val > 1 {
+					e0 := testElement2{V: e.Value().(int)}
+					if e0.V > 1 {
 						_ = other.Add(e0)
 					}
 					return true
 				},
 			},
-			want: &GroundSet{
+			want: &Set{
 				set: map[string]Element{
-					"2": testElement2{Val: 2},
-					"3": testElement2{Val: 3},
+					"2": testElement2{V: 2},
+					"3": testElement2{V: 3},
 				},
-				groundSetType: type2,
+				setType: type2,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gs := &GroundSet{
-				set:           tt.fields.set,
-				groundSetType: tt.fields.groundSetType,
+			gs := &Set{
+				set:     tt.fields.set,
+				setType: tt.fields.groundSetType,
 			}
 			gs.Each(tt.args.f)
 			if !reflect.DeepEqual(other, tt.want) {
-				t.Errorf("GroundSet.Each(): %v, want %v", other, tt.want)
+				t.Errorf("Set.Each(): %v, want %v", other, tt.want)
 			}
 		})
 	}
 }
 
-func TestGroundSet_Remove(t *testing.T) {
+func TestSet_Remove(t *testing.T) {
 	type fields struct {
 		set           map[string]Element
 		groundSetType ElementType
@@ -1026,84 +1034,84 @@ func TestGroundSet_Remove(t *testing.T) {
 			name: "test1",
 			fields: fields{
 				set: map[string]Element{
-					"1": testElement1{Val: 1},
-					"2": testElement1{Val: 2},
-					"3": testElement1{Val: 3},
+					"1": testElement1{V: 1},
+					"2": testElement1{V: 2},
+					"3": testElement1{V: 3},
 				},
 				groundSetType: type1,
 			},
-			args: []Element{testElement1{Val: 1}, testElement1{Val: 2}},
+			args: []Element{testElement1{V: 1}, testElement1{V: 2}},
 			want: 1,
 		},
 		{
 			name: "test2",
 			fields: fields{
 				set: map[string]Element{
-					"1": testElement1{Val: 1},
-					"2": testElement1{Val: 2},
-					"3": testElement1{Val: 3},
+					"1": testElement1{V: 1},
+					"2": testElement1{V: 2},
+					"3": testElement1{V: 3},
 				},
 				groundSetType: type1,
 			},
-			args: []Element{testElement1{Val: 3}, testElement1{Val: 4}},
+			args: []Element{testElement1{V: 3}, testElement1{V: 4}},
 			want: 2,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gs := &GroundSet{
-				set:           tt.fields.set,
-				groundSetType: tt.fields.groundSetType,
+			gs := &Set{
+				set:     tt.fields.set,
+				setType: tt.fields.groundSetType,
 			}
 			for _, e := range tt.args {
 				gs.Remove(e)
 			}
 			if gs.Cardinality() != tt.want {
-				t.Errorf("GroundSet.Remove(): %d, wantList %d", gs.Cardinality(), tt.want)
+				t.Errorf("Set.Remove(): %d, wantList %d", gs.Cardinality(), tt.want)
 			}
 		})
 	}
 }
 
-func TestGroundSet_SymmetricDifference(t *testing.T) {
+func TestSet_SymmetricDifference(t *testing.T) {
 	type fields struct {
 		set           map[string]Element
 		groundSetType ElementType
 	}
 	type args struct {
-		other *GroundSet
+		other *Set
 	}
 	tests := []struct {
 		name    string
 		fields  fields
 		args    args
-		want    *GroundSet
+		want    *Set
 		wantErr bool
 	}{
 		{
 			name: "test1",
 			fields: fields{
 				set: map[string]Element{
-					"1": testElement1{Val: 1},
-					"2": testElement1{Val: 2},
+					"1": testElement1{V: 1},
+					"2": testElement1{V: 2},
 				},
 				groundSetType: type1,
 			},
 			args: args{
-				other: &GroundSet{
+				other: &Set{
 					set: map[string]Element{
-						"2": testElement1{Val: 2},
-						"3": testElement1{Val: 3},
+						"2": testElement1{V: 2},
+						"3": testElement1{V: 3},
 					},
-					groundSetType: type1,
+					setType: type1,
 				},
 			},
-			want: &GroundSet{
+			want: &Set{
 				set: map[string]Element{
-					"1": testElement1{Val: 1},
-					"3": testElement1{Val: 3},
+					"1": testElement1{V: 1},
+					"3": testElement1{V: 3},
 				},
-				groundSetType: type1,
+				setType: type1,
 			},
 			wantErr: false,
 		},
@@ -1111,18 +1119,18 @@ func TestGroundSet_SymmetricDifference(t *testing.T) {
 			name: "test2",
 			fields: fields{
 				set: map[string]Element{
-					"1": testElement1{Val: 1},
-					"2": testElement1{Val: 2},
+					"1": testElement1{V: 1},
+					"2": testElement1{V: 2},
 				},
 				groundSetType: type1,
 			},
 			args: args{
-				other: &GroundSet{
+				other: &Set{
 					set: map[string]Element{
-						"2": testElement1{Val: 2},
-						"3": testElement1{Val: 3},
+						"2": testElement1{V: 2},
+						"3": testElement1{V: 3},
 					},
-					groundSetType: type2,
+					setType: type2,
 				},
 			},
 			want:    nil,
@@ -1132,87 +1140,87 @@ func TestGroundSet_SymmetricDifference(t *testing.T) {
 			name: "test3",
 			fields: fields{
 				set: map[string]Element{
-					"1": testElement1{Val: 1},
-					"2": testElement1{Val: 2},
-					"3": testElement1{Val: 3},
+					"1": testElement1{V: 1},
+					"2": testElement1{V: 2},
+					"3": testElement1{V: 3},
 				},
 				groundSetType: type1,
 			},
 			args: args{
-				other: &GroundSet{
+				other: &Set{
 					set: map[string]Element{
-						"1": testElement1{Val: 1},
-						"2": testElement1{Val: 2},
-						"3": testElement1{Val: 3},
+						"1": testElement1{V: 1},
+						"2": testElement1{V: 2},
+						"3": testElement1{V: 3},
 					},
-					groundSetType: type1,
+					setType: type1,
 				},
 			},
-			want: &GroundSet{
-				set:           map[string]Element{},
-				groundSetType: type1,
+			want: &Set{
+				set:     map[string]Element{},
+				setType: type1,
 			},
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gs := &GroundSet{
-				set:           tt.fields.set,
-				groundSetType: tt.fields.groundSetType,
+			gs := &Set{
+				set:     tt.fields.set,
+				setType: tt.fields.groundSetType,
 			}
 			got, err := gs.SymmetricDifference(tt.args.other)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("GroundSet.SymmetricDifference() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Set.SymmetricDifference() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GroundSet.SymmetricDifference() = %v, want %v", got, tt.want)
+				t.Errorf("Set.SymmetricDifference() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestGroundSet_Union(t *testing.T) {
+func TestSet_Union(t *testing.T) {
 	type fields struct {
 		set           map[string]Element
 		groundSetType ElementType
 	}
 	type args struct {
-		other *GroundSet
+		other *Set
 	}
 	tests := []struct {
 		name    string
 		fields  fields
 		args    args
-		want    *GroundSet
+		want    *Set
 		wantErr bool
 	}{
 		{
 			name: "test1",
 			fields: fields{
 				set: map[string]Element{
-					"1": testElement1{Val: 1},
-					"2": testElement1{Val: 2},
+					"1": testElement1{V: 1},
+					"2": testElement1{V: 2},
 				},
 				groundSetType: type1,
 			},
 			args: args{
-				other: &GroundSet{
+				other: &Set{
 					set: map[string]Element{
-						"2": testElement1{Val: 2},
-						"3": testElement1{Val: 3},
+						"2": testElement1{V: 2},
+						"3": testElement1{V: 3},
 					},
-					groundSetType: type1,
+					setType: type1,
 				},
 			},
-			want: &GroundSet{
+			want: &Set{
 				set: map[string]Element{
-					"1": testElement1{Val: 1},
-					"2": testElement1{Val: 2},
-					"3": testElement1{Val: 3},
+					"1": testElement1{V: 1},
+					"2": testElement1{V: 2},
+					"3": testElement1{V: 3},
 				},
-				groundSetType: type1,
+				setType: type1,
 			},
 			wantErr: false,
 		},
@@ -1220,18 +1228,18 @@ func TestGroundSet_Union(t *testing.T) {
 			name: "test2",
 			fields: fields{
 				set: map[string]Element{
-					"1": testElement1{Val: 1},
-					"2": testElement1{Val: 2},
+					"1": testElement1{V: 1},
+					"2": testElement1{V: 2},
 				},
 				groundSetType: type1,
 			},
 			args: args{
-				other: &GroundSet{
+				other: &Set{
 					set: map[string]Element{
-						"2": testElement1{Val: 2},
-						"3": testElement1{Val: 3},
+						"2": testElement1{V: 2},
+						"3": testElement1{V: 3},
 					},
-					groundSetType: type2,
+					setType: type2,
 				},
 			},
 			want:    nil,
@@ -1241,52 +1249,52 @@ func TestGroundSet_Union(t *testing.T) {
 			name: "test3",
 			fields: fields{
 				set: map[string]Element{
-					"1": testElement1{Val: 1},
-					"2": testElement1{Val: 2},
-					"3": testElement1{Val: 3},
+					"1": testElement1{V: 1},
+					"2": testElement1{V: 2},
+					"3": testElement1{V: 3},
 				},
 				groundSetType: type1,
 			},
 			args: args{
-				other: &GroundSet{
+				other: &Set{
 					set: map[string]Element{
-						"1": testElement1{Val: 1},
-						"2": testElement1{Val: 2},
-						"3": testElement1{Val: 3},
+						"1": testElement1{V: 1},
+						"2": testElement1{V: 2},
+						"3": testElement1{V: 3},
 					},
-					groundSetType: type1,
+					setType: type1,
 				},
 			},
-			want: &GroundSet{
+			want: &Set{
 				set: map[string]Element{
-					"1": testElement1{Val: 1},
-					"2": testElement1{Val: 2},
-					"3": testElement1{Val: 3},
+					"1": testElement1{V: 1},
+					"2": testElement1{V: 2},
+					"3": testElement1{V: 3},
 				},
-				groundSetType: type1,
+				setType: type1,
 			},
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gs := &GroundSet{
-				set:           tt.fields.set,
-				groundSetType: tt.fields.groundSetType,
+			gs := &Set{
+				set:     tt.fields.set,
+				setType: tt.fields.groundSetType,
 			}
 			got, err := gs.Union(tt.args.other)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("GroundSet.Union() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Set.Union() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GroundSet.Union() = %v, want %v", got, tt.want)
+				t.Errorf("Set.Union() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestGroundSet_String(t *testing.T) {
+func TestSet_String(t *testing.T) {
 	type fields struct {
 		set           map[string]Element
 		groundSetType ElementType
@@ -1300,36 +1308,36 @@ func TestGroundSet_String(t *testing.T) {
 			name: "test1",
 			fields: fields{
 				set: map[string]Element{
-					"1": testElement1{Val: 1},
-					"2": testElement1{Val: 2},
-					"3": testElement1{Val: 3},
+					"1": testElement1{V: 1},
+					"2": testElement1{V: 2},
+					"3": testElement1{V: 3},
 				},
 				groundSetType: type1,
 			},
 			wantList: []string{
-				"GroundSet{\n 1\n 2\n 3\n}",
-				"GroundSet{\n 1\n 3\n 2\n}",
-				"GroundSet{\n 2\n 1\n 3\n}",
-				"GroundSet{\n 2\n 3\n 1\n}",
-				"GroundSet{\n 3\n 1\n 2\n}",
-				"GroundSet{\n 3\n 2\n 1\n}",
+				"Set{\n 1\n 2\n 3\n}",
+				"Set{\n 1\n 3\n 2\n}",
+				"Set{\n 2\n 1\n 3\n}",
+				"Set{\n 2\n 3\n 1\n}",
+				"Set{\n 3\n 1\n 2\n}",
+				"Set{\n 3\n 2\n 1\n}",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gs := &GroundSet{
-				set:           tt.fields.set,
-				groundSetType: tt.fields.groundSetType,
+			gs := &Set{
+				set:     tt.fields.set,
+				setType: tt.fields.groundSetType,
 			}
 			if got := gs.String(); !isStringIn(tt.wantList, got) {
-				t.Errorf("GroundSet.String() = %v, want one of %v", got, strings.Join(tt.wantList, "\n"))
+				t.Errorf("Set.String() = %v, want one of %v", got, strings.Join(tt.wantList, "\n"))
 			}
 		})
 	}
 }
 
-func TestGroundSet_Pop(t *testing.T) {
+func TestSet_Pop(t *testing.T) {
 	type fields struct {
 		set           map[string]Element
 		groundSetType ElementType
@@ -1343,33 +1351,33 @@ func TestGroundSet_Pop(t *testing.T) {
 			name: "test1",
 			fields: fields{
 				set: map[string]Element{
-					"1": testElement1{Val: 1},
-					"2": testElement1{Val: 2},
-					"3": testElement1{Val: 3},
+					"1": testElement1{V: 1},
+					"2": testElement1{V: 2},
+					"3": testElement1{V: 3},
 				},
 				groundSetType: type1,
 			},
 			wantList: []Element{
-				testElement1{Val: 1},
-				testElement1{Val: 2},
-				testElement1{Val: 3},
+				testElement1{V: 1},
+				testElement1{V: 2},
+				testElement1{V: 3},
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gs := &GroundSet{
-				set:           tt.fields.set,
-				groundSetType: tt.fields.groundSetType,
+			gs := &Set{
+				set:     tt.fields.set,
+				setType: tt.fields.groundSetType,
 			}
 			if got := gs.Pop(); !isElementIn(tt.wantList, got) {
-				t.Errorf("GroundSet.Pop() = %v, want one of %v", got, tt.wantList)
+				t.Errorf("Set.Pop() = %v, want one of %v", got, tt.wantList)
 			}
 		})
 	}
 }
 
-func TestGroundSet_Choose(t *testing.T) {
+func TestSet_Choose(t *testing.T) {
 	type fields struct {
 		set           map[string]Element
 		groundSetType ElementType
@@ -1387,9 +1395,9 @@ func TestGroundSet_Choose(t *testing.T) {
 			name: "test1",
 			fields: fields{
 				set: map[string]Element{
-					"1": testElement1{Val: 1},
-					"2": testElement1{Val: 2},
-					"3": testElement1{Val: 3},
+					"1": testElement1{V: 1},
+					"2": testElement1{V: 2},
+					"3": testElement1{V: 3},
 				},
 				groundSetType: type1,
 			},
@@ -1398,23 +1406,23 @@ func TestGroundSet_Choose(t *testing.T) {
 					return e.Value().(int) > 2
 				},
 			},
-			want: testElement1{Val: 3},
+			want: testElement1{V: 3},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gs := &GroundSet{
-				set:           tt.fields.set,
-				groundSetType: tt.fields.groundSetType,
+			gs := &Set{
+				set:     tt.fields.set,
+				setType: tt.fields.groundSetType,
 			}
 			if got := gs.Choose(tt.args.f); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GroundSet.Choose() = %v, want %v", got, tt.want)
+				t.Errorf("Set.Choose() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestGroundSet_CondSubset(t *testing.T) {
+func TestSet_CondSubset(t *testing.T) {
 	type fields struct {
 		set           map[string]Element
 		groundSetType ElementType
@@ -1426,17 +1434,17 @@ func TestGroundSet_CondSubset(t *testing.T) {
 		name   string
 		fields fields
 		args   args
-		want   *GroundSet
+		want   *Set
 	}{
 		{
 			name: "test1",
 			fields: fields{
 				set: map[string]Element{
-					"1": testElement1{Val: 1},
-					"2": testElement1{Val: 2},
-					"3": testElement1{Val: 3},
-					"4": testElement1{Val: 4},
-					"5": testElement1{Val: 5},
+					"1": testElement1{V: 1},
+					"2": testElement1{V: 2},
+					"3": testElement1{V: 3},
+					"4": testElement1{V: 4},
+					"5": testElement1{V: 5},
 				},
 				groundSetType: type1,
 			},
@@ -1445,24 +1453,24 @@ func TestGroundSet_CondSubset(t *testing.T) {
 					return e.Value().(int) > 2
 				},
 			},
-			want: &GroundSet{
+			want: &Set{
 				set: map[string]Element{
-					"3": testElement1{Val: 3},
-					"4": testElement1{Val: 4},
-					"5": testElement1{Val: 5},
+					"3": testElement1{V: 3},
+					"4": testElement1{V: 4},
+					"5": testElement1{V: 5},
 				},
-				groundSetType: type1,
+				setType: type1,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gs := &GroundSet{
-				set:           tt.fields.set,
-				groundSetType: tt.fields.groundSetType,
+			gs := &Set{
+				set:     tt.fields.set,
+				setType: tt.fields.groundSetType,
 			}
 			if got := gs.CondSubset(tt.args.f); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GroundSet.CondSubset() = %v, want %v", got, tt.want)
+				t.Errorf("Set.CondSubset() = %v, want %v", got, tt.want)
 			}
 		})
 	}
