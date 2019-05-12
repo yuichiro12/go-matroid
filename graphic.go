@@ -103,7 +103,7 @@ type WeightedDigraph struct {
 }
 
 func (d *WeightedDigraph) AddVertex(v *Vertex) {
-	d.A.Add(v)
+	d.V.Add(v)
 	d.AddNode(v)
 }
 
