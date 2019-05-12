@@ -59,10 +59,9 @@ func TestNewSet(t *testing.T) {
 		e []Element
 	}
 	tests := []struct {
-		name    string
-		args    args
-		want    *Set
-		wantErr bool
+		name string
+		args args
+		want *Set
 	}{
 		{
 			name: "test1",
@@ -78,7 +77,6 @@ func TestNewSet(t *testing.T) {
 				},
 				setType: type1,
 			},
-			wantErr: false,
 		},
 		{
 			name: "test2",
@@ -86,17 +84,12 @@ func TestNewSet(t *testing.T) {
 				t: type1,
 				e: []Element{testElement1{V: 1}, testElement1{V: 2}, testElement2{V: 3}},
 			},
-			want:    nil,
-			wantErr: true,
+			want: nil,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewSet(tt.args.t, tt.args.e...)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("NewSet() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
+			got := NewSet(tt.args.t, tt.args.e...)
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewSet() = %v, want %v", got, tt.want)
 			}
@@ -113,10 +106,10 @@ func TestSet_Add(t *testing.T) {
 		e Element
 	}
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
+		name   string
+		fields fields
+		args   args
+		want   bool
 	}{
 		{
 			name: "test1",
@@ -128,8 +121,8 @@ func TestSet_Add(t *testing.T) {
 				},
 				groundSetType: type1,
 			},
-			args:    args{e: testElement1{V: 4}},
-			wantErr: false,
+			args: args{e: testElement1{V: 4}},
+			want: true,
 		},
 		{
 			name: "test2",
@@ -141,8 +134,8 @@ func TestSet_Add(t *testing.T) {
 				},
 				groundSetType: type1,
 			},
-			args:    args{e: testElement2{V: 4}},
-			wantErr: true,
+			args: args{e: testElement2{V: 3}},
+			want: false,
 		},
 	}
 	for _, tt := range tests {
@@ -151,13 +144,11 @@ func TestSet_Add(t *testing.T) {
 				set:     tt.fields.set,
 				setType: tt.fields.groundSetType,
 			}
-			if err := gs.Add(tt.args.e); (err != nil) != tt.wantErr {
-				t.Errorf("Set.Add() error = %v, wantErr %v", err, tt.wantErr)
-			}
+			gs.Add(tt.args.e)
 		})
 	}
 	t.Run("test3", func(t *testing.T) {
-		gs, _ := NewSet(type1, testElement1{V: 1}, testElement1{V: 2})
+		gs := NewSet(type1, testElement1{V: 1}, testElement1{V: 2})
 		if gs.Cardinality() != 2 {
 			t.Errorf("cardinarity mismatch. expected:2, actural: %d", gs.Cardinality())
 		}
@@ -290,11 +281,10 @@ func TestSet_Difference(t *testing.T) {
 		other *Set
 	}
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    *Set
-		wantErr bool
+		name   string
+		fields fields
+		args   args
+		want   *Set
 	}{
 		{
 			name: "test1",
@@ -323,7 +313,6 @@ func TestSet_Difference(t *testing.T) {
 				},
 				setType: type1,
 			},
-			wantErr: false,
 		},
 		{
 			name: "test2",
@@ -349,7 +338,6 @@ func TestSet_Difference(t *testing.T) {
 				set:     map[string]Element{},
 				setType: type1,
 			},
-			wantErr: false,
 		},
 		{
 			name: "test3",
@@ -371,8 +359,7 @@ func TestSet_Difference(t *testing.T) {
 					setType: type2,
 				},
 			},
-			want:    nil,
-			wantErr: true,
+			want: nil,
 		},
 	}
 	for _, tt := range tests {
@@ -381,11 +368,7 @@ func TestSet_Difference(t *testing.T) {
 				set:     tt.fields.set,
 				setType: tt.fields.groundSetType,
 			}
-			got, err := gs.Difference(tt.args.other)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Set.Difference() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
+			got := gs.Difference(tt.args.other)
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Set.Difference() = %v, want %v", got, tt.want)
 			}
@@ -517,11 +500,10 @@ func TestSet_Intersect(t *testing.T) {
 		other *Set
 	}
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    *Set
-		wantErr bool
+		name   string
+		fields fields
+		args   args
+		want   *Set
 	}{
 		{
 			name: "test1",
@@ -552,7 +534,6 @@ func TestSet_Intersect(t *testing.T) {
 				},
 				setType: type1,
 			},
-			wantErr: false,
 		},
 		{
 			name: "test1",
@@ -576,8 +557,7 @@ func TestSet_Intersect(t *testing.T) {
 					setType: type2,
 				},
 			},
-			want:    nil,
-			wantErr: true,
+			want: nil,
 		},
 	}
 	for _, tt := range tests {
@@ -586,11 +566,7 @@ func TestSet_Intersect(t *testing.T) {
 				set:     tt.fields.set,
 				setType: tt.fields.groundSetType,
 			}
-			got, err := gs.Intersect(tt.args.other)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Set.Intersect() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
+			got := gs.Intersect(tt.args.other)
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Set.Intersect() = %v, want %v", got, tt.want)
 			}
@@ -1082,11 +1058,10 @@ func TestSet_SymmetricDifference(t *testing.T) {
 		other *Set
 	}
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    *Set
-		wantErr bool
+		name   string
+		fields fields
+		args   args
+		want   *Set
 	}{
 		{
 			name: "test1",
@@ -1113,7 +1088,6 @@ func TestSet_SymmetricDifference(t *testing.T) {
 				},
 				setType: type1,
 			},
-			wantErr: false,
 		},
 		{
 			name: "test2",
@@ -1133,8 +1107,7 @@ func TestSet_SymmetricDifference(t *testing.T) {
 					setType: type2,
 				},
 			},
-			want:    nil,
-			wantErr: true,
+			want: nil,
 		},
 		{
 			name: "test3",
@@ -1160,7 +1133,6 @@ func TestSet_SymmetricDifference(t *testing.T) {
 				set:     map[string]Element{},
 				setType: type1,
 			},
-			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
@@ -1169,11 +1141,7 @@ func TestSet_SymmetricDifference(t *testing.T) {
 				set:     tt.fields.set,
 				setType: tt.fields.groundSetType,
 			}
-			got, err := gs.SymmetricDifference(tt.args.other)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Set.SymmetricDifference() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
+			got := gs.SymmetricDifference(tt.args.other)
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Set.SymmetricDifference() = %v, want %v", got, tt.want)
 			}
@@ -1190,11 +1158,10 @@ func TestSet_Union(t *testing.T) {
 		other *Set
 	}
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    *Set
-		wantErr bool
+		name   string
+		fields fields
+		args   args
+		want   *Set
 	}{
 		{
 			name: "test1",
@@ -1222,7 +1189,6 @@ func TestSet_Union(t *testing.T) {
 				},
 				setType: type1,
 			},
-			wantErr: false,
 		},
 		{
 			name: "test2",
@@ -1242,8 +1208,7 @@ func TestSet_Union(t *testing.T) {
 					setType: type2,
 				},
 			},
-			want:    nil,
-			wantErr: true,
+			want: nil,
 		},
 		{
 			name: "test3",
@@ -1273,7 +1238,6 @@ func TestSet_Union(t *testing.T) {
 				},
 				setType: type1,
 			},
-			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
@@ -1282,11 +1246,7 @@ func TestSet_Union(t *testing.T) {
 				set:     tt.fields.set,
 				setType: tt.fields.groundSetType,
 			}
-			got, err := gs.Union(tt.args.other)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Set.Union() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
+			got := gs.Union(tt.args.other)
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Set.Union() = %v, want %v", got, tt.want)
 			}

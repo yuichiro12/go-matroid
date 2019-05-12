@@ -33,17 +33,15 @@ type Element interface {
 	Weight() float64
 }
 
-func NewSet(t ElementType, e ...Element) (*Set, error) {
+func NewSet(t ElementType, e ...Element) *Set {
 	s := &Set{
 		set:     make(map[string]Element),
 		setType: t,
 	}
 	for _, el := range e {
-		if err := s.Add(el); err != nil {
-			return nil, err
-		}
+		s.Add(el)
 	}
-	return s, nil
+	return s
 }
 
 func (s *Set) GetType() ElementType {
@@ -51,24 +49,23 @@ func (s *Set) GetType() ElementType {
 }
 
 func EmptySet(t ElementType) *Set {
-	s, _ := NewSet(t)
-	return s
+	return NewSet(t)
 }
 
-func errorTypeMismatch(t0, t1 ElementType) error {
-	return fmt.Errorf("element type mismatch: %s and %s", t0, t1)
+func typeMismatchPanic(t0, t1 ElementType) {
+	panic(fmt.Sprintf("ElementType mismatch: %s and %s", t0, t1))
 }
 
-func errorSetTypeMismatch(t0, t1 ElementType) error {
-	return fmt.Errorf("Set type mismatch: %s and %s", t0, t1)
-}
-
-func (s *Set) Add(e Element) error {
+// Add() returns true if element is added; otherwise false
+func (s *Set) Add(e Element) bool {
 	if e.GetType() != s.setType {
-		return errorTypeMismatch(s.setType, e.GetType())
+		typeMismatchPanic(s.setType, e.GetType())
 	}
-	s.set[e.Key()] = e
-	return nil
+	if _, ok := s.set[e.Key()]; !ok {
+		s.set[e.Key()] = e
+		return true
+	}
+	return false
 }
 
 func (s *Set) Cardinality() int {
@@ -107,34 +104,34 @@ func (s *Set) Contains(e ...Element) bool {
 
 // Difference() subtracts `other` from `s`.
 // If your Element has field of slice, map or pointer, the reference to the original Set still remains.
-func (s *Set) Difference(other *Set) (*Set, error) {
+func (s *Set) Difference(other *Set) *Set {
 	if s.setType != other.setType {
-		return nil, errorSetTypeMismatch(s.setType, other.setType)
+		typeMismatchPanic(s.setType, other.setType)
 	}
 	s0 := EmptySet(s.setType)
 	for e := range s.Iter() {
 		if !other.Contains(e) {
-			_ = s0.Add(e)
+			s0.Add(e)
 		}
 	}
-	return s0, nil
+	return s0
 }
 
 func (s *Set) Equal(other *Set) bool {
 	return s.IsSubsetOf(other) && other.IsSubsetOf(s)
 }
 
-func (s *Set) Intersect(other *Set) (*Set, error) {
+func (s *Set) Intersect(other *Set) *Set {
 	if s.setType != other.setType {
-		return nil, errorSetTypeMismatch(s.setType, other.setType)
+		typeMismatchPanic(s.setType, other.setType)
 	}
 	s0 := EmptySet(s.setType)
 	for e := range s.Iter() {
 		if other.Contains(e) {
-			_ = s0.Add(e)
+			s0.Add(e)
 		}
 	}
-	return s0, nil
+	return s0
 }
 
 func (s *Set) IsProperSubsetOf(other *Set) bool {
@@ -181,34 +178,29 @@ func (s *Set) Iter() <-chan Element {
 // Remove() removes given element from Set.
 // Note that doesn't check setType; only check Key() of given Elements.
 func (s *Set) Remove(e Element) {
-	if _, ok := s.set[e.Key()]; ok {
-		delete(s.set, e.Key())
-	}
+	delete(s.set, e.Key())
 }
 
-func (s *Set) SymmetricDifference(other *Set) (*Set, error) {
+func (s *Set) SymmetricDifference(other *Set) *Set {
 	if s.setType != other.setType {
-		return nil, errorSetTypeMismatch(s.setType, other.setType)
+		typeMismatchPanic(s.setType, other.setType)
 	}
-	s1, _ := s.Difference(other)
-	s2, _ := other.Difference(s)
-	s0, _ := s1.Union(s2)
-	return s0, nil
+	return s.Difference(other).Union(other.Difference(s))
 }
 
-func (s *Set) Union(other *Set) (*Set, error) {
+func (s *Set) Union(other *Set) *Set {
 	if s.setType != other.setType {
-		return nil, errorSetTypeMismatch(s.setType, other.setType)
+		typeMismatchPanic(s.setType, other.setType)
 	}
 	s0 := EmptySet(s.setType)
-	diff, _ := s.Difference(other)
+	diff := s.Difference(other)
 	for e := range diff.Iter() {
-		_ = s0.Add(e)
+		s0.Add(e)
 	}
 	for e := range other.Iter() {
-		_ = s0.Add(e)
+		s0.Add(e)
 	}
-	return s0, nil
+	return s0
 }
 
 func (s *Set) String() string {
@@ -244,7 +236,7 @@ func (s *Set) CondSubset(f func(Element) bool) *Set {
 	s0 := EmptySet(s.setType)
 	for e := range s.Iter() {
 		if f(e) {
-			_ = s0.Add(e)
+			s0.Add(e)
 		}
 	}
 	return s0
@@ -266,5 +258,5 @@ func (s *Set) Complement(subset *Set) (*Set, error) {
 	if !s.IsSupersetOf(subset) {
 		return nil, errors.New("Complement(): input Set is not subset of the receiver Set")
 	}
-	return s.Difference(subset)
+	return s.Difference(subset), nil
 }
