@@ -11,7 +11,7 @@ type Set struct {
 	setType ElementType
 }
 
-// ElmentType is type of element.
+// ElementType is type of element.
 // This is mainly used for two validation:
 // 1. checking if an element can be added to the set
 // 2. checking if two Sets are comparable

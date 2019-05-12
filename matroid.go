@@ -43,21 +43,21 @@ func Intersection(m1, m2 Matroid) (*Set, error) {
 	}
 	gs := m1.GroundSet()
 	s := EmptySet(gs.GetType())
+
 	for e := range gs.Iter() {
 		_ = s.Add(e)
 		if !(m1.Independent(s) && m2.Independent(s)) {
 			s.Remove(e)
 		}
 	}
-	//c, _ := gs.Complement(s)
-	// TODO
+
+	c, _ := gs.Complement(s)
+	generateMatroidIntersectionBipartiteDigraph(s, c)
 	return nil, nil
 }
 
-//
-//func generateMatroidIntersectionBipartiteDigraph(gs, c *Set) *WeightedDigraph {
-//
-//}
+func generateMatroidIntersectionBipartiteDigraph(gs, c *Set) *WeightedDigraph {
+}
 
 // GetBaseOf() returns an arbitrary base of input matroid.
 func GetBaseOf(m Matroid) *Set {
