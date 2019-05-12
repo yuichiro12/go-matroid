@@ -1,44 +1,79 @@
 package matroid
 
-import "fmt"
+import (
+	"fmt"
+
+	"gonum.org/v1/gonum/graph"
+	"gonum.org/v1/gonum/graph/multi"
+)
 
 const ArcType ElementType = "ARC"
 const VertexType ElementType = "VERTEX"
 
 type Arc struct {
-	Start *Vertex
-	End   *Vertex
-	W     float64
-	Id    string
+	Tail *Vertex
+	Head *Vertex
+	W    float64
+	Id   int64
 }
 
-func (e *Arc) From() *Vertex {
-	return e.Start
+func AsArc(l graph.Line) *Arc {
+	return l.(*Arc)
 }
 
-func (e *Arc) To() *Vertex {
-	return e.End
-}
-
-func (e *Arc) GetType() ElementType {
+func (l *Arc) GetType() ElementType {
 	return ArcType
 }
 
-func (e *Arc) Key() string {
-	return fmt.Sprintf("%s:d(%s,%s)", e.Id, e.From().Key(), e.To().Key())
+func (l *Arc) Key() string {
+	return fmt.Sprintf("%d:(%d,%d)")
 }
 
-func (e *Arc) Value() interface{} {
-	return [2]*Vertex{e.Start, e.End}
+func (l *Arc) Value() interface{} {
+	return l.Id
 }
 
-func (e *Arc) Weight() float64 {
-	return e.W
+func (l *Arc) Weight() float64 {
+	return l.W
+}
+
+func (l *Arc) From() graph.Node {
+	return l.Tail
+}
+
+func (l *Arc) To() graph.Node {
+	return l.Head
+}
+
+func (l *Arc) ReversedLine() graph.Line {
+	return &Arc{
+		Tail: l.Head,
+		Head: l.Tail,
+		W:    l.W,
+		Id:   l.Id,
+	}
+}
+
+func (l *Arc) ReversedNewLine(id int64) graph.Line {
+	return &Arc{
+		Tail: l.Head,
+		Head: l.Tail,
+		W:    l.W,
+		Id:   id,
+	}
+}
+
+func (l *Arc) ID() int64 {
+	return l.Id
 }
 
 type Vertex struct {
-	ID string
+	Id int64
 	W  float64
+}
+
+func AsVertex(n graph.Node) *Vertex {
+	return n.(*Vertex)
 }
 
 func (v *Vertex) GetType() ElementType {
@@ -46,25 +81,51 @@ func (v *Vertex) GetType() ElementType {
 }
 
 func (v *Vertex) Key() string {
-	return fmt.Sprintf("%d", v.ID)
+	return fmt.Sprintf("%d", v.Id)
 }
 
 func (v *Vertex) Value() interface{} {
-	return v.ID
+	return v.ID()
 }
 
 func (v *Vertex) Weight() float64 {
 	return v.W
 }
 
-type WeightedDigraph struct {
-	// V is set of Vertices
-	V *Set
-	// A is set of Arcs
-	A *Set
+func (v Vertex) ID() int64 {
+	return v.Id
 }
 
-type Weighted
+type WeightedDigraph struct {
+	*multi.WeightedDirectedGraph
+	A *Set
+	V *Set
+}
 
-// func ToAdjacentMatrix()
-// func ToIncidenceMatrix()
+func (d *WeightedDigraph) AddVertex(v *Vertex) {
+	d.A.Add(v)
+	d.AddNode(v)
+}
+
+func (d *WeightedDigraph) RemoveVertex(v *Vertex) {
+	d.V.Remove(v)
+	d.RemoveNode(v.Id)
+}
+
+func (d *WeightedDigraph) AddArc(a *Arc) {
+	d.A.Add(a)
+	d.SetWeightedLine(a)
+}
+
+func (d *WeightedDigraph) RemoveArc(a *Arc) {
+	d.A.Remove(a)
+	d.RemoveLine(a.Tail.Id, a.Head.Id, a.Id)
+}
+
+func NewWeightedDigraph() *WeightedDigraph {
+	return &WeightedDigraph{
+		WeightedDirectedGraph: multi.NewWeightedDirectedGraph(),
+		A:                     EmptySet(ArcType),
+		V:                     EmptySet(VertexType),
+	}
+}
