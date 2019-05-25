@@ -109,14 +109,23 @@ func (lm *LinearMatroid) GetMatrixOf(s *Set) Matrix {
 
 // rank() returns rank of input matrix using singular value decomposition.
 func rank(m mat.Matrix) int {
-	svd := new(mat.SVD)
+	if Epsilon < 0 {
+		panic("Epsilon must be non-negative value")
+	}
+	if Epsilon == 0 {
+		Epsilon = 1e-10
+	}
+	var svd mat.SVD
 	svd.Factorize(m, mat.SVDNone)
-	svs := svd.Values(nil)
-	var count int
-	for _, v := range svs {
-		if v > Epsilon {
-			count++
+	sv := svd.Values(nil)
+	for i, v := range sv {
+		if v < Epsilon {
+			return i
 		}
 	}
-	return count
+	r, c := m.Dims()
+	if r < c {
+		return r
+	}
+	return c
 }
