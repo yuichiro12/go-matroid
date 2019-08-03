@@ -87,7 +87,7 @@ func (s *Set) Clear() {
 func (s *Set) Clone() *Set {
 	s0 := EmptySet(s.setType)
 	for e := range s.Iter() {
-		s0.set[e.Key()] = e
+		s0.Add(e)
 	}
 	return s0
 }
@@ -194,8 +194,7 @@ func (s *Set) Union(other *Set) *Set {
 		typeMismatchPanic(s.setType, other.setType)
 	}
 	s0 := EmptySet(s.setType)
-	diff := s.Difference(other)
-	for e := range diff.Iter() {
+	for e := range s.Iter() {
 		s0.Add(e)
 	}
 	for e := range other.Iter() {
@@ -260,4 +259,20 @@ func (s *Set) Complement(subset *Set) (*Set, error) {
 		return nil, errors.New("Complement(): input Set is not subset of the receiver Set")
 	}
 	return s.Difference(subset), nil
+}
+
+func UnionAll(s ...*Set) *Set {
+	s0 := EmptySet(s[0].GetType())
+	for _, ss := range s {
+		s0.Union(ss)
+	}
+	return s0
+}
+
+func IntersectAll(s ...*Set) *Set {
+	s0 := EmptySet(s[0].GetType())
+	for _, ss := range s {
+		s0.Intersect(ss)
+	}
+	return s0
 }

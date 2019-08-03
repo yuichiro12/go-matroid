@@ -7,24 +7,22 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-var Epsilon = 1e-10
-
 const VectorType ElementType = "VECTOR"
 
 type LinearMatroid struct {
 	groundSet *Set
 }
 
-func (lm *LinearMatroid) GroundSet() *Set {
-	return lm.groundSet
+func (l *LinearMatroid) GroundSet() *Set {
+	return l.groundSet
 }
 
-func (lm *LinearMatroid) Rank(s *Set) int {
-	return rank(lm.GetMatrixOf(s))
+func (l *LinearMatroid) Rank(s *Set) int {
+	return rank(l.GetMatrixOf(s), 0)
 }
 
-func (lm *LinearMatroid) Independent(s *Set) bool {
-	return s.Cardinality() == lm.Rank(s)
+func (l *LinearMatroid) Independent(s *Set) bool {
+	return s.Cardinality() == l.Rank(s)
 }
 
 // Vector implements Element
@@ -99,7 +97,7 @@ func NewLinearMatroid(m Matrix) *LinearMatroid {
 // GetMatrixOf() returns Matrix form of input Set.
 // The input must be the subset of the GroundSet.
 // the order of rows is not idempotent because the set has no order
-func (lm *LinearMatroid) GetMatrixOf(s *Set) Matrix {
+func (l *LinearMatroid) GetMatrixOf(s *Set) Matrix {
 	var m Matrix
 	for e := range s.Iter() {
 		m = append(m, e.(Vector))
@@ -108,18 +106,19 @@ func (lm *LinearMatroid) GetMatrixOf(s *Set) Matrix {
 }
 
 // rank() returns rank of input matrix using singular value decomposition.
-func rank(m mat.Matrix) int {
-	if Epsilon < 0 {
-		panic("Epsilon must be non-negative value")
+func rank(m mat.Matrix, epsilon float64) int {
+	if epsilon < 0 {
+		panic("epsilon must be positive")
 	}
-	if Epsilon == 0 {
-		Epsilon = 1e-10
+	// give a default value
+	if epsilon == 0 {
+		epsilon = 1e-10
 	}
 	var svd mat.SVD
 	svd.Factorize(m, mat.SVDNone)
 	sv := svd.Values(nil)
 	for i, v := range sv {
-		if v < Epsilon {
+		if v < epsilon {
 			return i
 		}
 	}
