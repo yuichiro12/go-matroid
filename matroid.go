@@ -2,7 +2,12 @@ package matroid
 
 import (
 	"fmt"
+	"math"
 	"sort"
+
+	"gonum.org/v1/gonum/graph"
+
+	"gonum.org/v1/gonum/graph/simple"
 )
 
 type Matroid interface {
@@ -32,6 +37,39 @@ func (s sorter) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
 }
 
+type node struct {
+	id     int64
+	weight float64
+}
+
+func (n node) ID() int64 {
+	return n.id
+}
+
+type weightedEdge struct {
+	tail node
+	head node
+}
+
+func (w weightedEdge) From() graph.Node {
+	return w.tail
+}
+
+func (w weightedEdge) To() graph.Node {
+	return w.head
+}
+
+func (w weightedEdge) ReversedEdge() graph.Edge {
+	return weightedEdge{
+		tail: w.head,
+		head: w.tail,
+	}
+}
+
+func (w weightedEdge) Weight() float64 {
+	return w.head.weight - w.tail.weight
+}
+
 // Intersection() returns matroid intersection of input two matroids.
 func Intersection(m1, m2 Matroid) (*Set, error) {
 	if !(m1.GroundSet().GetType() == m2.GroundSet().GetType()) {
@@ -45,19 +83,57 @@ func Intersection(m1, m2 Matroid) (*Set, error) {
 	s := EmptySet(gs.GetType())
 
 	for e := range gs.Iter() {
-		_ = s.Add(e)
+		s.Add(e)
 		if !(m1.Independent(s) && m2.Independent(s)) {
 			s.Remove(e)
 		}
 	}
 
 	c, _ := gs.Complement(s)
-	generateMatroidIntersectionBipartiteDigraph(s, c)
+	d := generateMatroidIntersectionBipartiteDigraph(s, c, m1, m2)
 	return nil, nil
 }
 
-func generateMatroidIntersectionBipartiteDigraph(gs, c *Set) *WeightedDigraph {
-	return &WeightedDigraph{}
+func generateMatroidIntersectionBipartiteDigraph(s, c *Set, m1, m2 Matroid) *simple.WeightedDirectedGraph {
+	k2n := getKeyToNodeMap(s, c)
+	d := simple.NewWeightedDirectedGraph(0, math.Inf(1))
+	for _, v := range k2n {
+		d.AddNode(v)
+	}
+	s0 := s.Clone()
+	for e := range s.Iter() {
+		for f := range c.Iter() {
+			s0.Swap(f, e)
+			if m1.Independent(s0) {
+				d.SetWeightedEdge(weightedEdge{tail: k2n[e.Key()], head: k2n[f.Key()]})
+			}
+			if m2.Independent(s0) {
+				d.SetWeightedEdge(weightedEdge{tail: k2n[f.Key()], head: k2n[e.Key()]})
+			}
+			s0.Swap(e, f)
+		}
+	}
+	return d
+}
+
+func getKeyToNodeMap(s, c *Set) map[string]node {
+	m := make(map[string]node)
+	var idx int64
+	for e := range s.Iter() {
+		m[e.Key()] = node{
+			id:     idx,
+			weight: e.Weight(),
+		}
+		idx++
+	}
+	for e := range c.Iter() {
+		m[e.Key()] = node{
+			id:     idx,
+			weight: e.Weight(),
+		}
+		idx++
+	}
+	return m
 }
 
 // GetBaseOf() returns an arbitrary base of input matroid.
@@ -66,7 +142,7 @@ func GetBaseOf(m Matroid) *Set {
 
 	s := m.GroundSet().ToSlice()
 	for i := 0; i < len(s); i++ {
-		_ = set.Add(s[i])
+		set.Add(s[i])
 		if !m.Independent(set) {
 			set.Remove(s[i])
 		}
@@ -81,7 +157,7 @@ func GetMaximalBaseOf(m Matroid) *Set {
 	s = m.GroundSet().ToSlice()
 	sort.Sort(s)
 	for i := 0; i < len(s); i++ {
-		_ = set.Add(s[i])
+		set.Add(s[i])
 		if !m.Independent(set) {
 			set.Remove(s[i])
 		}
@@ -109,7 +185,7 @@ func (dm *dualMatroid) GroundSet() *Set {
 
 func (dm *dualMatroid) Rank(s *Set) int {
 	c, err := dm.GroundSet().Complement(s)
-	// making sure that input is the subset of the GroundSet, this would never panics
+	// make sure that input is the subset of the GroundSet
 	if err != nil {
 		panic(err)
 	}

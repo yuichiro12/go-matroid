@@ -54,13 +54,8 @@ func (a *Arc) ReversedLine() graph.Line {
 	}
 }
 
-func (a *Arc) ReversedNewLine(id int64) graph.Line {
-	return &Arc{
-		Tail: a.Head,
-		Head: a.Tail,
-		W:    a.W,
-		Id:   id,
-	}
+func (a *Arc) Reversed() *Arc {
+	return AsArc(a.ReversedLine())
 }
 
 func (a *Arc) ID() int64 {

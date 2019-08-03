@@ -261,6 +261,19 @@ func (s *Set) Complement(subset *Set) (*Set, error) {
 	return s.Difference(subset), nil
 }
 
+// Swap() swaps elements. If success it returns true and s is changed. Otherwise false and s is not changed.
+func (s *Set) Swap(in, out Element) bool {
+	if s.Add(in) {
+		if s.Contains(out) {
+			s.Remove(out)
+			return true
+		}
+		// rollback
+		s.Remove(in)
+	}
+	return false
+}
+
 func UnionAll(s ...*Set) *Set {
 	s0 := EmptySet(s[0].GetType())
 	for _, ss := range s {
