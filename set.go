@@ -56,7 +56,8 @@ func typeMismatchPanic(t0, t1 ElementType) {
 	panic(fmt.Sprintf("ElementType mismatch: %s and %s", t0, t1))
 }
 
-// Add() returns true if element is added; otherwise false
+// Add() returns true if element is added and false if element is already in the set.
+// It panics if the given element has different ElementType with the set.
 func (s *Set) Add(e Element) bool {
 	if e.GetType() != s.setType {
 		typeMismatchPanic(s.setType, e.GetType())

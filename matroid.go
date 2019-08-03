@@ -57,6 +57,7 @@ func Intersection(m1, m2 Matroid) (*Set, error) {
 }
 
 func generateMatroidIntersectionBipartiteDigraph(gs, c *Set) *WeightedDigraph {
+	return &WeightedDigraph{}
 }
 
 // GetBaseOf() returns an arbitrary base of input matroid.

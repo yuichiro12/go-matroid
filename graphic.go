@@ -21,50 +21,50 @@ func AsArc(l graph.Line) *Arc {
 	return l.(*Arc)
 }
 
-func (l *Arc) GetType() ElementType {
+func (a *Arc) GetType() ElementType {
 	return ArcType
 }
 
-func (l *Arc) Key() string {
-	return fmt.Sprintf("%d:(%d,%d)")
+func (a *Arc) Key() string {
+	return fmt.Sprintf("%d", a.Id)
 }
 
-func (l *Arc) Value() interface{} {
-	return l.Id
+func (a *Arc) Value() interface{} {
+	return a.Id
 }
 
-func (l *Arc) Weight() float64 {
-	return l.W
+func (a *Arc) Weight() float64 {
+	return a.W
 }
 
-func (l *Arc) From() graph.Node {
-	return l.Tail
+func (a *Arc) From() graph.Node {
+	return a.Tail
 }
 
-func (l *Arc) To() graph.Node {
-	return l.Head
+func (a *Arc) To() graph.Node {
+	return a.Head
 }
 
-func (l *Arc) ReversedLine() graph.Line {
+func (a *Arc) ReversedLine() graph.Line {
 	return &Arc{
-		Tail: l.Head,
-		Head: l.Tail,
-		W:    l.W,
-		Id:   l.Id,
+		Tail: a.Head,
+		Head: a.Tail,
+		W:    a.W,
+		Id:   a.Id,
 	}
 }
 
-func (l *Arc) ReversedNewLine(id int64) graph.Line {
+func (a *Arc) ReversedNewLine(id int64) graph.Line {
 	return &Arc{
-		Tail: l.Head,
-		Head: l.Tail,
-		W:    l.W,
+		Tail: a.Head,
+		Head: a.Tail,
+		W:    a.W,
 		Id:   id,
 	}
 }
 
-func (l *Arc) ID() int64 {
-	return l.Id
+func (a *Arc) ID() int64 {
+	return a.Id
 }
 
 type Vertex struct {
