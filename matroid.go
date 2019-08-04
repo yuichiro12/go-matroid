@@ -37,40 +37,7 @@ func (s sorter) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
 }
 
-type node struct {
-	id     int64
-	weight float64
-}
-
-func (n node) ID() int64 {
-	return n.id
-}
-
-type weightedEdge struct {
-	tail node
-	head node
-}
-
-func (w weightedEdge) From() graph.Node {
-	return w.tail
-}
-
-func (w weightedEdge) To() graph.Node {
-	return w.head
-}
-
-func (w weightedEdge) ReversedEdge() graph.Edge {
-	return weightedEdge{
-		tail: w.head,
-		head: w.tail,
-	}
-}
-
-func (w weightedEdge) Weight() float64 {
-	return w.head.weight - w.tail.weight
-}
-
-// Intersection() returns matroid intersection of input two matroids.
+// Intersection() returns maximal matroid intersection of input two matroids.
 func Intersection(m1, m2 Matroid) (*Set, error) {
 	if !(m1.GroundSet().GetType() == m2.GroundSet().GetType()) {
 		return nil, fmt.Errorf("incomparable setTypes: %s and %s",
@@ -89,26 +56,44 @@ func Intersection(m1, m2 Matroid) (*Set, error) {
 		}
 	}
 
-	c, _ := gs.Complement(s)
-	d := generateMatroidIntersectionBipartiteDigraph(s, c, m1, m2)
-	return nil, nil
+	for {
+		c, _ := gs.Complement(s)
+		d := generateMatroidIntersectionBipartiteDigraph(s, c, m1, m2)
+		p := findShortestPath(d)
+		if p == nil {
+			break
+		}
+		swapAlongPath(s, p)
+	}
+	return s, nil
 }
 
 func generateMatroidIntersectionBipartiteDigraph(s, c *Set, m1, m2 Matroid) *simple.WeightedDirectedGraph {
-	k2n := getKeyToNodeMap(s, c)
+	nodes := getKeyToNodeMap(s, c)
 	d := simple.NewWeightedDirectedGraph(0, math.Inf(1))
-	for _, v := range k2n {
+	for _, v := range nodes {
 		d.AddNode(v)
 	}
 	s0 := s.Clone()
+
+	for f := range c.Iter() {
+		s0.Add(f)
+		if m1.Independent(s0) {
+			nodes[f.Key()].isSink = true
+		}
+		if m2.Independent(s0) {
+			nodes[f.Key()].isSource = true
+		}
+		s0.Remove(f)
+	}
 	for e := range s.Iter() {
 		for f := range c.Iter() {
 			s0.Swap(f, e)
 			if m1.Independent(s0) {
-				d.SetWeightedEdge(weightedEdge{tail: k2n[e.Key()], head: k2n[f.Key()]})
+				d.SetWeightedEdge(&weightedEdge{tail: nodes[e.Key()], head: nodes[f.Key()]})
 			}
 			if m2.Independent(s0) {
-				d.SetWeightedEdge(weightedEdge{tail: k2n[f.Key()], head: k2n[e.Key()]})
+				d.SetWeightedEdge(&weightedEdge{tail: nodes[f.Key()], head: nodes[e.Key()]})
 			}
 			s0.Swap(e, f)
 		}
@@ -116,21 +101,26 @@ func generateMatroidIntersectionBipartiteDigraph(s, c *Set, m1, m2 Matroid) *sim
 	return d
 }
 
-func getKeyToNodeMap(s, c *Set) map[string]node {
-	m := make(map[string]node)
+// augment s
+func swapAlongPath(s *Set, p []graph.Node) {
+	for i, v := range p {
+		if i%2 == 0 {
+			s.Add(v.(*node).element)
+		} else {
+			s.Remove(v.(*node).element)
+		}
+	}
+}
+
+func getKeyToNodeMap(s, c *Set) map[string]*node {
+	m := make(map[string]*node)
 	var idx int64
 	for e := range s.Iter() {
-		m[e.Key()] = node{
-			id:     idx,
-			weight: e.Weight(),
-		}
+		m[e.Key()] = &node{id: idx, element: e}
 		idx++
 	}
 	for e := range c.Iter() {
-		m[e.Key()] = node{
-			id:     idx,
-			weight: e.Weight(),
-		}
+		m[e.Key()] = &node{id: idx, element: e}
 		idx++
 	}
 	return m

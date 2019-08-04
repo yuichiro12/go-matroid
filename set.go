@@ -22,12 +22,12 @@ type ElementType string
 type Element interface {
 	// GetType() returns the type of this element
 	GetType() ElementType
-	// Key() returns unique and idempotent string related with Value().
+	// Key() returns unique and idempotent string related with nodes().
 	// This is used for the key of the map since Set is implemented with map.
 	// Thanks for this Key(), you can add any kind of data (map, slice, func...)
 	// no matter how they are unhashable.
 	Key() string
-	// Value() returns the value of this element
+	// nodes() returns the value of this element
 	Value() interface{}
 	// Weight() returns the weight of this element
 	Weight() float64
